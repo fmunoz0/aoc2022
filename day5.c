@@ -1,6 +1,6 @@
 #include "stdio.h"
 
-void part1(){
+void resolve(int part){
 	FILE* f = fopen("day5.txt", "r");
 	char stacks[9][56]={0}; //en peor caso todas las cajas en un stack son 56
 	int sizes[9]={0};
@@ -31,10 +31,17 @@ void part1(){
 		from--;
 		to--;
 		for(i=0; i<move; i++){
-			stacks[to][sizes[to]] = stacks[from][sizes[from]-1];
-			sizes[to]++;
-			sizes[from]--;
+			if (part == 1) {
+				stacks[to][sizes[to]] = stacks[from][sizes[from]-1];
+				sizes[to]++;
+				sizes[from]--;
+			} else {
+				stacks[to][sizes[to]] = stacks[from][sizes[from]-move+i];
+				sizes[to]++;
+			}
 		}
+		if (part == 2)
+			sizes[from] -= move;
 	}
 	
 	for(i=0; i<9; i++)
@@ -46,5 +53,5 @@ void part1(){
 }
 
 int main(){
-	part1();
+	resolve(2);
 }
