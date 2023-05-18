@@ -3,11 +3,13 @@
 #include "string.h"
 #include "stdlib.h"
 
-#define MAXDIRSIZE 100000
+#define TOTALDISKSPACE 70000000UL
+#define MINFREESPACE 30000000UL
 
-uint64_t traverse(FILE* f, uint64_t* result) {
+uint64_t traverse(FILE* f, uint64_t* dirsizes, int* lastdir) {
 	char buf[50];
 	uint64_t total = 0;
+	int curdir = (*lastdir)++;
 	
 	while (1) {
 		fgets(buf, 50, f);
@@ -16,30 +18,34 @@ uint64_t traverse(FILE* f, uint64_t* result) {
 		if (!strncmp(buf, "$ cd ..", 7)) break;
 		
 		if (!strncmp(buf, "$ cd", 4))
-			total += traverse(f, result);
+			total += traverse(f, dirsizes, lastdir);
 		else {
 			// parsing a non numeric string to int gives 0, so there is no problem
 			// of adding the return of atoi directly
 			total += (uint64_t)atoi(buf);
 		}
 	}
-	
-	*result += (total < MAXDIRSIZE ? total : 0);
-	
+
+	dirsizes[curdir] = total;
 	return total;
 }
 
-
 int main() {
 	FILE* f = fopen("day7.txt", "r");
-	
-	uint64_t result = 0;
-	traverse(f, &result);
-	
+	uint64_t* dirsizes = calloc(200, sizeof(uint64_t));
+	int lastdir = 0;
+	uint64_t usedspace = traverse(f, dirsizes, &lastdir);
 	fclose(f);
+	uint64_t freespace = TOTALDISKSPACE - usedspace;
+	uint64_t mindirsize = usedspace;
+	int i;
+	for (i = 0; i < 200; i++) {
+		if ((freespace + dirsizes[i] > MINFREESPACE) && (dirsizes[i] < mindirsize))
+			mindirsize = dirsizes[i];
+	}
+	free(dirsizes);
 	
-	printf("%llu\n", result);
-	
+	printf("%llu\n", mindirsize);
 	
 	return 0;
 }
