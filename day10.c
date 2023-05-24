@@ -5,7 +5,7 @@
 int main() {
 	FILE* f;
 	char buf[100];
-	int cycle = 1, x = 1, k, i, total = 0;
+	int cycle = 1, x = 1, k, i, col;
 	
 	f = fopen("day10.txt", "r");
 	
@@ -21,18 +21,21 @@ int main() {
 			k = 0;
 			
 		for (i = 0; i < k; i++) {
-			if (cycle >= 20 && (cycle - 20) % 40 == 0) {
-				printf("%d * %d = %d\n", cycle, x, cycle * x);
-				total += cycle * x;
-			}
+			col = (cycle - 1) % 40;
+			if (col >= (x - 1) && col <= (x + 1))
+				putchar('#');
+			else
+				putchar('.');
+			
+			if (col == 39)
+				putchar('\n');
+			
 			cycle++;
 		}
 		
 		if (!strncmp(buf, "addx", 4))
 			x += atoi(buf + 5);
 	}
-	
-	printf("%d\n", total);
 	
 	fclose(f);
 	return 0;
