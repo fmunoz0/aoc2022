@@ -1,109 +1,131 @@
-#include "stdio.h"
-
-struct max {
-	int up, down, left, right;
-};
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 
 int map[100][100];
 int rows, cols;
-struct max max[100][100];
 
-void initmap() {
-	/*map[0][0]=3; map[0][1]=0; map[0][2]=3; map[0][3]=7; map[0][4]=3;
-	map[1][0]=2; map[1][1]=5; map[1][2]=5; map[1][3]=1; map[1][4]=2;
-	map[2][0]=6; map[2][1]=5; map[2][2]=3; map[2][3]=3; map[2][4]=2;
-	map[3][0]=3; map[3][1]=3; map[3][2]=5; map[3][3]=4; map[3][4]=9;
-	map[4][0]=3; map[4][1]=5; map[4][2]=3; map[4][3]=9; map[4][4]=0;
-	rows = 5;
-	cols = 5;*/
-	FILE* f;
+void readMap(const char* name){
 	char buf[200];
-	int i;
-
-	f = fopen("day8.txt", "r");
+	FILE* f = fopen(name, "r");
+	
 	rows = 0;
-	while (1) {
-		fgets(buf, sizeof(buf), f);
-		if (feof(f)) break;
+	
+	while (fgets(buf, sizeof(buf), f)) {
+		int len = strlen(buf) - 2; // trim \r\n
 		
-		for (i = 0; buf[i] != '\n'; i++) {
-			map[rows][i] = buf[i] - '0';
+		for (cols = 0; cols < len; cols++) {
+			int height = buf[cols] - '0'; // convert caracter to int
+			map[rows][cols] = height;
 		}
 		
-		cols = i;
 		rows++;
 	}
+	
 	fclose(f);
 }
 
-void initmax() {
-	int i, j;
-	for (i = 0; i < rows; i++)
-		for (j = 0; j < cols; j++) {
-			max[i][j].up = -1;
-			max[i][j].down = -1;
-			max[i][j].left = -1;
-			max[i][j].right = -1;
-		}
+bool isVisible(int row, int col){
+	int height = map[row][col];
+	
+	// up
+	bool visible = true;
+	for (int r = row-1; r >= 0 && visible; r--)
+		if (height <= map[r][col])
+			visible = false;
+	
+	if (visible) return true;
+	
+	// bottom
+	visible = true;
+	for (int r = row+1; r < rows && visible; r++)
+		if (height <= map[r][col])
+			visible = false;
+	
+	if (visible) return true;
+	
+	// left
+	visible = true;
+	for (int c= col-1; c >= 0 && visible; c--)
+		if (height <= map[row][c])
+			visible = false;
+	
+	if (visible) return true;
+	
+	
+	// right
+	visible = true;
+	for (int c= col+1; c < cols && visible; c++)
+		if (height <= map[row][c])
+			visible = false;
+	
+	if (visible) return true;
+	
+	return false;
 }
 
-// 38:40
-void recursion(int r, int c) {
-	if (r == 0)
-		max[r][c].up = map[r][c];
-	else if (r == rows-1)
-		max[r][c].down = map[r][c];
-
-	if (c == 0)
-		max[r][c].left = map[r][c];
-	else if (c == cols-1)
-		max[r][c].right = map[r][c];
-
-	if (max[r][c].right < 0) {
-		if (max[r][c+1].right < 0)
-			recursion(r, c+1);
-		max[r][c].right = (max[r][c+1].right <= map[r][c] ? map[r][c] : max[r][c+1].right);
-	}
+int countVisibleTrees(){
+	int count = (rows<<1) + (cols<<1) - 4; // trees on border
 	
-	if (max[r][c].left < 0) {
-		if (max[r][c-1].left < 0)
-			recursion(r, c-1);
-		max[r][c].left = (max[r][c-1].left <= map[r][c] ? map[r][c] : max[r][c-1].left);
-	}
+	for (int r = 1; r < rows-1; r++)
+		for (int c = 1; c < cols-1; c++)
+			count += isVisible(r, c) ? 1 : 0;
 	
-	if (max[r][c].down < 0) {
-		if (max[r+1][c].down < 0)
-			recursion(r+1, c);
-		max[r][c].down = (max[r+1][c].down <= map[r][c] ? map[r][c] : max[r+1][c].down);
-	}
-	
-	if (max[r][c].up < 0) {
-		if (max[r-1][c].up < 0)
-			recursion(r-1, c);
-		max[r][c].up = (max[r-1][c].up <= map[r][c] ? map[r][c] : max[r-1][c].up);
-	}
+	return count;
 }
 
-int main() {
-	int i, j, total;
+int scenicScore(int row, int col){
+	int height = map[row][col];
+	int up=0, down=0, left=0, right=0;
 	
-	initmap();
-	initmax();
-	
-	recursion(0, 0);
-	
-	int r = 4, c = 4;
-	
-	printf("%d %d %d %d\n", max[r][c].up, max[r][c].down, max[r][c].left, max[r][c].right);
-	
-	total = rows * 2 + (cols - 2) * 2;
-	for (i = 1; i < rows - 1; i++) {
-		for (j = 1; j < cols - 1; j++) {
-			total += (map[i][j] > max[i-1][j].up || map[i][j] > max[i+1][j].down || map[i][j] > max[i][j+1].right || map[i][j] > max[i][j-1].left);
-		}
+	// up
+	for (int r = row-1; r >= 0; r--){
+		up++;
+		if (map[r][col] >= height)
+			break;
+	}
+	// down
+	for (int r = row+1; r < rows; r++){
+		down++;
+		if (map[r][col] >= height)
+			break;
+	}
+	// left
+	for (int c = col-1; c >= 0; c--){
+		left++;
+		if (map[row][c] >= height)
+			break;
+	}
+	// right
+	for (int c = col+1; c < cols; c++){
+		right++;
+		if (map[row][c] >= height)
+			break;
 	}
 	
-	printf("%d\n", total);
+	return up * down * left * right;
+}
+
+int maxScenicScore(){
+	int maxScore = 0;
 	
+	for (int r = 1; r < rows-1; r++)
+		for (int c = 1; c < cols-1; c++){
+			int score = scenicScore(r, c);
+			maxScore = score > maxScore ? score : maxScore;
+		}
+			
+	return maxScore;
+}
+
+int main(){
+	readMap("day8.txt");
+	
+	// part 1
+	//printf("%d\n", countVisibleTrees());
+	
+	// part 2
+	printf("%d\n", maxScenicScore());
 	return 0;
 }
