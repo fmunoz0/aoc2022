@@ -26,6 +26,7 @@ int startRow, startCol;
 bool** map;
 int rows, cols;
 
+// simulate the moves and create a map big enough to contain all positions
 void createMap(){
 	int row=0, col=0;
 	int minRow=0, maxRow=0;
@@ -59,9 +60,15 @@ void createMap(){
 	}
 }
 
-void moveTail(int headRow, int headCol, int* tailRow, int* tailCol){
-	int deltaRow = headRow - *tailRow;
-	int deltaCol = headCol - *tailCol;
+// first knot is the head, last knot is the tail
+#define KNOTS 10
+int knotRow[KNOTS];
+int knotCol[KNOTS];
+
+// knot "k" follows knot "k-1"
+void moveKnot(int k){
+	int deltaRow = knotRow[k-1] - knotRow[k];
+	int deltaCol = knotCol[k-1] - knotCol[k];
 	
 	// if the head is adyacent to the tail, do nothing
 	if (abs(deltaRow) <= 1 && abs(deltaCol) <= 1)
@@ -72,32 +79,71 @@ void moveTail(int headRow, int headCol, int* tailRow, int* tailCol){
 	// one delta is 1 and the other is 2 -> diagonal motion
 	
 	if (abs(deltaRow) > 0)
-		*tailRow += deltaRow > 0 ? 1 : -1;
+		knotRow[k] += deltaRow > 0 ? 1 : -1;
 	
 	if (abs(deltaCol) > 0)
-		*tailCol += deltaCol > 0 ? 1 : -1;
+		knotCol[k]  += deltaCol > 0 ? 1 : -1;
+}
+
+void printKnots(){ // for debugging
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++){
+			bool printedKnot = false;
+			for (int k = 0; k < KNOTS && !printedKnot; k++){
+				if (knotRow[k]==i && knotCol[k]==j){
+					printf("%c", k == 0 ? 'H' : '0'+k);
+					printedKnot = true;
+				}
+			}
+			if (!printedKnot)
+				printf("%c", i==startRow && j==startCol ? 's' : map[i][j] ? '#' : '.');
+		}
+		puts("");
+	}
+	getchar();
+}
+
+void printMap(){ // for debugging
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++){
+			printf("%c", i==startRow && j==startCol ? 's' : map[i][j] ? '#' : '.');
+		}
+		puts("");
+	}
+	getchar();
 }
 
 int simulateMoves(){
-	int headRow=startRow, headCol=startCol;
-	int tailRow=startRow, tailCol=startCol;
+	for (int k = 0; k < KNOTS; k++){
+		knotRow[k]=startRow;
+		knotCol[k]=startCol;
+	}
 	int visitedCount=0;
+	
+	//printKnots();
 	
 	for (int i = 0; i < num_moves; i++){
 		for (int j = 0; j < moves[i][1]; j++) { // for each step
 			// move head
 			switch (moves[i][0]){
-				case 'U': headRow--; break;
-				case 'D': headRow++; break;
-				case 'L': headCol--; break;
-				case 'R': headCol++; break;
+				case 'U': knotRow[0]--; break;
+				case 'D': knotRow[0]++; break;
+				case 'L': knotCol[0]--; break;
+				case 'R': knotCol[0]++; break;
 			}
 			
-			moveTail(headRow, headCol, &tailRow, &tailCol);
+			for (int k = 1; k < 11; k++)
+				moveKnot(k);
 			
-			visitedCount += map[tailRow][tailCol] ? 0 : 1; // only count when visiting for first time
-			map[tailRow][tailCol] = true; // visit position
+			int lastKnotRow = knotRow[KNOTS-1];
+			int lastKnotCol = knotCol[KNOTS-1]; 
+			
+			visitedCount += map[lastKnotRow][lastKnotCol] ? 0 : 1; // only count when visiting for first time
+			map[lastKnotRow][lastKnotCol] = true; // visit tail position
+			
+			//printKnots();
 		}
+		
 	}
 	
 	return visitedCount;
@@ -108,13 +154,10 @@ int main(){
 
 	createMap();
 	//printf("%d %d %d %d\n", rows, cols, startRow, startCol);
+	
 	printf("%d\n", simulateMoves());
 	
-	/*for (int i = 0; i < rows; i++) {
-		for (int j = 0; j < cols; j++)
-			printf("%c", map[i][j] ? '*' : '-');
-		puts("");
-	}*/
+	//printMap();
 	
 	return 0;
 }
