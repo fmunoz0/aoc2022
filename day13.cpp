@@ -1,6 +1,8 @@
 #include <iostream>
 #include <list>
 #include <fstream>
+#include <algorithm>
+#include <vector>
 
 using namespace std;
 
@@ -119,20 +121,40 @@ list<Pair> readPairs(const string &fn) {
 	return pairs;
 }
 
+bool operator<(Value left, Value right) { // for std::sort()
+	return compare(left, right) < 0;
+}
+
+bool operator==(Value left, Value right) { // for std::find()
+	return compare(left, right) == 0;
+}
+
+
 int main() {
 	list<Pair> pairs = readPairs("day13.txt");
-	int idx = 1;
-	int sum = 0;
+	vector<Value> packets;
 	for (const Pair &p : pairs) {
-		if (compare(p.v1, p.v2) < 0) {
-			//cout << idx << endl;
-			sum += idx;
-		}
-		
-		idx++;
+		packets.push_back(p.v1);
+		packets.push_back(p.v2);
 	}
-
-	cout << sum << endl;
+	Value pkt1 = parseValue("[[2]]");
+	Value pkt2 = parseValue("[[6]]");
+	packets.push_back(pkt1);
+	packets.push_back(pkt2);
+	
+	sort(packets.begin(), packets.end());
+/*
+	for (Value p : packets) {
+		cout << p << endl;
+	}
+*/
+	auto it1 = find(packets.begin(), packets.end(), pkt1);
+	auto it2 = find(packets.begin(), packets.end(), pkt2);
+	
+	int idx1 = it1 - packets.begin() + 1;
+	int idx2 = it2 - packets.begin() + 1;
+	
+	cout << idx1 * idx2 << endl;
 	
 	return 0;
 }
