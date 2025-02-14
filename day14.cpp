@@ -69,7 +69,7 @@ int main() {
 		steps++;
 	}
 	
-	cout << steps - 1 << endl;
+	cout << steps << endl;
 	
 	return 0;
 }
@@ -86,19 +86,18 @@ Simulation::Simulation(const list<Path> &paths) : overflowed(false) {
 		}
 	}
 	
-	int width = xMax - xMin + 1;
-	int height = yMax + 1;
+	int width = xMax * 2;
+	int height = yMax + 2 + 1;
 	tiles = vector<vector<Tile>>(height, vector<Tile>(width, Tile::AIR));
-	sandStartX = 500 - xMin;
+	sandStartX = 500;
 	for (const Path &path : paths) {
 		Point prev = path.front();
-		prev.x -= xMin;
-		for (Point cur : path) {	
-			cur.x -= xMin;
+		for (Point cur : path) {
 			fillLine(prev, cur);
 			prev = cur;
 		}
 	}
+	fillLine({0,height-1}, {width-1,height-1});
 }
 
 void Simulation::step() {
@@ -140,7 +139,13 @@ void Simulation::step() {
 			continue;
 		}
 			
-		// can't move in any directions, finish simulation step
+		// can't move in any directions
+		
+		// finish simulation if the source is blocked
+		if (x == sandStartX && y == 0)
+			overflowed = true;
+
+		// finish simulation step
 		tiles.at(y).at(x) = Tile::SAND;
 		break;
 	}
